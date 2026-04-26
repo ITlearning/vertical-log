@@ -88,6 +88,8 @@ enum APIError: Error {
 }
 
 extension URL {
-    static let productionAPI = URL(string: "https://vertical-log.vercel.app/api")!
-    // TODO(sprint-2): wire local dev override via Info.plist VL_API_BASE_URL
+    /// Production deployment. Note: vercel-log.vercel.app was already claimed by
+    /// another project, so we live at vercel-log-five.
+    static let productionAPI = URL(string: "https://vertical-log-five.vercel.app/api")!
+    // TODO(sprint-2): wire local dev override via Info.plist VL_API_BASE_URL (DEBUG-only)
 }
