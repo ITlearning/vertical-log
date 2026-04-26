@@ -18,11 +18,13 @@ V0 launch group: 본인 + 직장인 친구 4명. TestFlight.
 ## Conventions
 
 ### Swift / iOS
-- iOS 17+ minimum
+- **Pure Xcode iOS App project** (no SPM hybrid). `ios/VerticalLog.xcodeproj` is committed.
+- iOS 17+ minimum deployment target
 - SwiftUI first, UIKit only when SwiftUI insufficient (camera preview)
 - Async/await, no Combine for new code
 - File naming: `FeatureNameView.swift`, `FeatureNameViewModel.swift`
-- Tests: Swift Testing framework (`@Test`), XCTest fallback for iOS 16
+- Tests: Swift Testing framework (`@Test`) for iOS 17+, XCTest fallback only if needed
+- Build/test: Xcode `Cmd+R` / `Cmd+U` (CI uses xcodebuild)
 
 ### Web / Backend
 - Next.js App Router (Vercel Fluid Compute, Node runtime)

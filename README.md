@@ -52,8 +52,9 @@ vertical-log/
 # 1. CAGL prototype 검증 (가장 먼저 실행)
 ./scripts/cagl-prototype.sh
 
-# 2. iOS 빌드 (Xcode에서)
-open ios/Package.swift
+# 2. iOS — Xcode에서 프로젝트 생성 (one-time, see ios/SETUP.md)
+#    그 후:
+open ios/VerticalLog.xcodeproj
 
 # 3. Backend setup (Sprint 2)
 cd web && npm install

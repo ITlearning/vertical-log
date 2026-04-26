@@ -1,75 +1,73 @@
-# iOS Setup
+# iOS Setup — Xcode Project Creation
 
-This directory contains the iOS source files for vertical-log. The Xcode project itself (`.xcodeproj`) is **not** committed — each developer creates it locally.
+이 디렉토리는 비어있어요. Xcode에서 iOS App 프로젝트를 만든 다음, 만들어진 자리에 source 파일을 다시 채워넣을 거예요.
 
-## Why no committed `.xcodeproj`?
+## 1. Xcode에서 새 프로젝트 만들기 (5분)
 
-`.xcodeproj` files are binary, hard to merge, and tend to thrash on every change. Source files committed; project re-created on first checkout.
-
-## First-time setup (one-time, ~5 minutes)
-
-1. Open Xcode (16+).
-2. **File → New → Project**.
-3. iOS → **App** → Next.
-4. Settings:
-   - Product Name: `VerticalLog`
-   - Team: your Apple ID (free tier is fine for V0)
-   - Organization Identifier: `com.itlearning` (or your reverse-DNS)
+1. **Xcode 16+** 실행.
+2. **File → New → Project** (`Cmd+Shift+N`)
+3. **iOS → App** 선택 → **Next**
+4. 옵션:
+   - Product Name: **`VerticalLog`**
+   - Team: 본인 Apple ID (free 계정도 OK)
+   - Organization Identifier: `com.itlearning` (또는 본인의 reverse-DNS)
+   - Bundle ID: 자동으로 `com.itlearning.VerticalLog`이 됨
    - Interface: **SwiftUI**
    - Language: **Swift**
    - Storage: **None**
-   - Include Tests: **checked**
-5. Save location: select the `ios/` directory of this repo. **Uncheck "Create Git Repository"** (we already have one).
-6. Xcode creates `ios/VerticalLog.xcodeproj` plus default files in `ios/VerticalLog/` and `ios/VerticalLogTests/` — these will overwrite stub files. **Cancel the overwrite** when prompted, OR delete the Xcode-default files (`VerticalLogApp.swift`, `ContentView.swift`, default test) and add the existing scaffolded files via **File → Add Files to "VerticalLog"…** → select all `.swift` files in `ios/VerticalLog/` recursively.
-7. Build settings:
-   - Deployment target: **iOS 17.0**
-   - Signing: select your Team. Bundle ID: `com.itlearning.verticallog`.
-8. Add capability: **Signing & Capabilities → + Capability → Sign in with Apple**.
-9. Add Info.plist keys (or set in build settings):
-   - `NSCameraUsageDescription` = "9:16 클립을 캡처하기 위해 카메라가 필요해요"
-   - `NSMicrophoneUsageDescription` = "클립 음성 녹음에 필요해요" (V0는 muted compile이지만 capture는 audio 포함)
+   - **Include Tests** 체크 ✓
+5. **Next** → 저장 위치 선택:
+   - `~/vertical-log/ios/` 폴더로 이동
+   - "Create Git Repository on my Mac" **언체크** (이미 git repo 있음)
+   - **Create**
 
-## Build & test (post-setup)
+6. Xcode가 만든 결과:
+   ```
+   ios/
+   ├── VerticalLog.xcodeproj/        ← 이건 commit됨 (.gitignore에서 제외 안 함)
+   ├── VerticalLog/
+   │   ├── VerticalLogApp.swift      ← Xcode default @main
+   │   ├── ContentView.swift          ← Xcode default 초기 view
+   │   ├── Assets.xcassets/
+   │   └── Preview Content/
+   └── VerticalLogTests/
+       └── VerticalLogTests.swift
+   ```
 
-- Build & run: `Cmd+R` (Xcode)
-- Test: `Cmd+U` (Xcode) — runs Swift Testing suite
-- CI: see `.github/workflows/ios.yml` (added in Sprint 1)
+## 2. 프로젝트 설정
 
-## File layout
+빌드 전에 몇 가지 설정 변경:
 
-```
-ios/
-├── VerticalLog.xcodeproj/      # local only, gitignored
-├── VerticalLog/
-│   ├── App/
-│   │   ├── VerticalLogApp.swift   # @main
-│   │   └── RootView.swift         # auth-aware root
-│   ├── Features/
-│   │   ├── Auth/AuthView.swift    # Sign in with Apple
-│   │   ├── Capture/CaptureView.swift  # 9:16 camera (TODO)
-│   │   ├── Feed/FeedView.swift    # room timeline
-│   │   └── Rooms/RoomsView.swift  # list/create/join
-│   └── Core/
-│       ├── Models/Models.swift    # Codable structs
-│       ├── Networking/APIClient.swift
-│       └── Storage/               # Keychain, local clip queue (Sprint 1)
-└── VerticalLogTests/
-    └── ModelsTests.swift
-```
+### Deployment target
+- 좌측 navigator에서 `VerticalLog` 프로젝트 클릭
+- TARGETS → VerticalLog → General 탭
+- **Minimum Deployments → iOS**: `17.0`
 
-## Sprint 1 implementation TODOs (in source files)
+### Signing & Capabilities
+- Signing & Capabilities 탭
+- Team 선택 (본인 Apple ID)
+- Bundle Identifier 확인: `com.itlearning.VerticalLog`
+- **+ Capability** → **Sign in with Apple** 추가
 
-Search the project for `TODO(sprint-1):` to find all stubs.
+### Info.plist 추가 keys (Sprint 1 카메라 작업 전 필요)
+프로젝트 → TARGETS → VerticalLog → Info 탭에서 추가:
+- `NSCameraUsageDescription` = `9:16 클립을 캡처하기 위해 카메라가 필요해요`
+- `NSMicrophoneUsageDescription` = `클립 음성 녹음에 필요해요`
 
-- AVCaptureSession 9:16 capture with 2-sec auto-stop
-- Sign in with Apple → backend `POST /auth/apple` → JWT in Keychain
-- Room create/join API wiring
-- Local clip upload queue
-- AVPlayer-backed feed cells
+(또는 Xcode 16에선 build settings의 INFOPLIST_KEY_NSCameraUsageDescription 등으로 직접 입력 가능)
 
-## Sprint 2+ (deferred)
+## 3. 빌드 & 빈 프로젝트 확인
 
-- iOS Local Notifications (1시간 cadence) + BGAppRefreshTask
-- Compile player view
-- CAGL share button (downloads `share_ready.mp4` → iOS share sheet)
-- Realtime chat (Supabase Realtime client)
+`Cmd+R` → 시뮬레이터에서 default `Hello, world!` 화면 보이면 OK.
+
+`Cmd+U` → default test가 통과하면 OK.
+
+## 4. 알려주세요
+
+여기까지 되면 알려주세요. 그러면 source 파일 (`VerticalLogApp.swift`, `RootView.swift`, `Features/...`, `Core/...`, 테스트 등)을 모두 정확한 자리에 다시 작성합니다. Xcode에서 "Add Files to VerticalLog..."로 새로 추가된 폴더들 일괄 추가하면 됩니다.
+
+## 트러블슈팅
+
+- **"Folder 'VerticalLog' already exists"** 경고가 뜨면: 이미 `ios/VerticalLog/` 가 있다는 뜻. 직전에 직접 만들었거나 잔여 파일. `ls ios/` 확인 후 비우고 재시도.
+- **Xcode 버전 mismatch**: Xcode 16+ 필요. App Store에서 업데이트.
+- **CI ios.yml 실패**: 이건 본인이 첫 commit push까지 빨간색일 수 있음. xcodeproj 생성 후 첫 push에서 처음으로 정상 작동.
