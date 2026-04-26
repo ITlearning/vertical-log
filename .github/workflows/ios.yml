@@ -1,0 +1,33 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+
+jobs:
+  test:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build (SPM library)
+        run: swift build
+
+      - name: Test
+        run: swift test
