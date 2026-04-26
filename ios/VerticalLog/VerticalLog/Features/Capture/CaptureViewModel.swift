@@ -35,8 +35,14 @@ final class CaptureViewModel: NSObject {
 
     // MARK: - Lifecycle
 
+    /// Called from `.task` on every view appear. First time it configures the
+    /// session and starts it; on subsequent appears (after a tab switch) it
+    /// just resumes the session that was paused by `tearDown()`.
     func bootstrap() async {
-        guard state == .unconfigured else { return }
+        guard state == .unconfigured else {
+            resume()
+            return
+        }
         state = .configuring
 
         let camOK = await Permissions.requestCamera()
@@ -58,13 +64,22 @@ final class CaptureViewModel: NSObject {
         }
     }
 
+    /// Resume the (already-configured) session. No-op if already running or
+    /// not yet configured.
+    func resume() {
+        sessionQueue.async { [weak self] in
+            guard let self, !self.session.isRunning else { return }
+            self.session.startRunning()
+        }
+    }
+
+    /// Pause the session — preview freezes but config is preserved. Recording
+    /// in progress is cancelled.
     func tearDown() {
         countdownTask?.cancel()
         sessionQueue.async { [weak self] in
-            guard let self else { return }
-            if self.session.isRunning {
-                self.session.stopRunning()
-            }
+            guard let self, self.session.isRunning else { return }
+            self.session.stopRunning()
         }
     }
 
