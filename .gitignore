@@ -1,0 +1,70 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift
+**/.build/
+**/.swiftpm/
+**/Package.resolved
+**/DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Node / Next.js
+**/node_modules/
+**/.next/
+**/.turbo/
+**/dist/
+**/build/
+*.log
+.npm
+.eslintcache
+.pnp.*
+.yarn/
+
+# Vercel
+.vercel
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Drizzle
+**/drizzle/.snapshot.json
+**/drizzle/meta/
+
+# Testing
+coverage/
+*.lcov
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CAGL prototype outputs (generated, not source)
+scripts/output/
+scripts/samples/
+
+# Secrets
+*.pem
+*.p8
+*.p12
+*.mobileprovision
+**/AuthKey_*.p8
+GoogleService-Info.plist
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+Thumbs.db
+ehthumbs.db
