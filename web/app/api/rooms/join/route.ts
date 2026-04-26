@@ -10,13 +10,10 @@ const JoinBody = z.object({
 });
 
 /**
- * POST /api/rooms/join { code: "ABC234" }
+ * POST /api/rooms/join { code } — idempotent join.
  *
- * Body-parameter form (originally /:code/join, but Next 16 forbids sibling
- * dynamic segment names under app/api/rooms/, so the code moved into the body).
- *
- * Idempotent: re-joining an already-member room returns 200.
- * Returns 404 if not found, 409 if room at member_cap.
+ * 200 already_member, 201 newly joined, 400 invalid code length,
+ * 404 not found, 409 room_full.
  */
 export async function POST(req: Request) {
   const guard = await authOr401(req);
@@ -64,10 +61,10 @@ export async function POST(req: Request) {
       .where(eq(roomMembers.roomId, room.id));
     return NextResponse.json(
       {
-        roomId: room.id,
+        room_id: room.id,
         name: room.name,
-        memberCount,
-        alreadyMember: true,
+        member_count: memberCount,
+        already_member: true,
       },
       { status: 200 }
     );
@@ -80,7 +77,7 @@ export async function POST(req: Request) {
 
   if (currentCount >= room.memberCap) {
     return NextResponse.json(
-      { error: 'room_full', memberCount: currentCount, memberCap: room.memberCap },
+      { error: 'room_full', member_count: currentCount, member_cap: room.memberCap },
       { status: 409 }
     );
   }
@@ -93,10 +90,10 @@ export async function POST(req: Request) {
 
   return NextResponse.json(
     {
-      roomId: room.id,
+      room_id: room.id,
       name: room.name,
-      memberCount: currentCount + 1,
-      alreadyMember: false,
+      member_count: currentCount + 1,
+      already_member: false,
     },
     { status: 201 }
   );

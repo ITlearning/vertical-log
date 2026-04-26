@@ -4,8 +4,7 @@ import { db, rooms, roomMembers } from '@/lib/db';
 import { authOr401 } from '@/lib/auth/session';
 
 /**
- * GET /api/rooms/:id
- * Room detail. Caller must be a member.
+ * GET /api/rooms/:id — room detail (member-only). snake_case JSON.
  */
 export async function GET(
   req: Request,
@@ -17,7 +16,6 @@ export async function GET(
 
   const { id: roomId } = await ctx.params;
 
-  // Membership check
   const [membership] = await db
     .select({ role: roomMembers.role })
     .from(roomMembers)
@@ -41,10 +39,10 @@ export async function GET(
   return NextResponse.json({
     id: room.id,
     name: room.name,
-    inviteCode: room.inviteCode,
-    memberCap: room.memberCap,
-    memberCount,
+    invite_code: room.inviteCode,
+    member_cap: room.memberCap,
+    member_count: memberCount,
     role: membership.role,
-    createdAt: room.createdAt,
+    created_at: room.createdAt,
   });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
 import { db, rooms, roomMembers } from '@/lib/db';
 import { authOr401 } from '@/lib/auth/session';
 import { generateUniqueInviteCode } from '@/lib/db/utils/inviteCode';
@@ -10,8 +10,7 @@ const CreateRoomBody = z.object({
 });
 
 /**
- * GET /api/rooms
- * Returns the rooms the authenticated user is a member of, with member counts.
+ * GET /api/rooms — rooms the authenticated user is a member of (snake_case keys).
  */
 export async function GET(req: Request) {
   const guard = await authOr401(req);
@@ -22,10 +21,10 @@ export async function GET(req: Request) {
     .select({
       id: rooms.id,
       name: rooms.name,
-      inviteCode: rooms.inviteCode,
-      memberCap: rooms.memberCap,
-      createdAt: rooms.createdAt,
-      memberCount: count(roomMembers.userId),
+      invite_code: rooms.inviteCode,
+      member_cap: rooms.memberCap,
+      created_at: rooms.createdAt,
+      member_count: count(roomMembers.userId),
     })
     .from(rooms)
     .innerJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
@@ -37,9 +36,7 @@ export async function GET(req: Request) {
 }
 
 /**
- * POST /api/rooms
- * Create a new room with the authenticated user as owner. Generates a unique
- * 6-char invite code (with retry on collision).
+ * POST /api/rooms { name } — create a room with the authenticated user as owner.
  */
 export async function POST(req: Request) {
   const guard = await authOr401(req);
@@ -65,8 +62,6 @@ export async function POST(req: Request) {
     return conflict.length === 0;
   });
 
-  // Two-statement transaction: insert room, then add owner as member.
-  // Drizzle's postgres-js driver supports db.transaction(tx => ...).
   const [room] = await db.transaction(async (tx) => {
     const inserted = await tx
       .insert(rooms)
@@ -84,10 +79,10 @@ export async function POST(req: Request) {
     {
       id: room.id,
       name: room.name,
-      inviteCode: room.inviteCode,
-      memberCap: room.memberCap,
-      memberCount: 1,
-      createdAt: room.createdAt,
+      invite_code: room.inviteCode,
+      member_cap: room.memberCap,
+      member_count: 1,
+      created_at: room.createdAt,
     },
     { status: 201 }
   );

@@ -5,21 +5,23 @@ import { verifyAppleIdentityToken } from '@/lib/auth/apple';
 import { signSessionToken } from '@/lib/auth/jwt';
 import { eq } from 'drizzle-orm';
 
+// API JSON convention: snake_case (matches iOS APIClient encoder/decoder
+// which is configured with convertToSnakeCase / convertFromSnakeCase).
 const SignInBody = z.object({
-  identityToken: z.string().min(1),
-  authorizationCode: z.string().optional(),
-  fullName: z
+  identity_token: z.string().min(1),
+  authorization_code: z.string().optional(),
+  full_name: z
     .object({
-      givenName: z.string().nullable().optional(),
-      familyName: z.string().nullable().optional(),
+      given_name: z.string().nullable().optional(),
+      family_name: z.string().nullable().optional(),
     })
     .optional(),
 });
 
 export async function POST(req: Request) {
-  let body: z.infer<typeof SignInBody>;
+  let parsed: z.infer<typeof SignInBody>;
   try {
-    body = SignInBody.parse(await req.json());
+    parsed = SignInBody.parse(await req.json());
   } catch (error) {
     return NextResponse.json(
       { error: 'invalid_request', message: error instanceof Error ? error.message : 'invalid' },
@@ -27,10 +29,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1. Verify Apple identity token against Apple JWKS
   let identity;
   try {
-    identity = await verifyAppleIdentityToken(body.identityToken);
+    identity = await verifyAppleIdentityToken(parsed.identity_token);
   } catch (error) {
     return NextResponse.json(
       { error: 'invalid_token', message: error instanceof Error ? error.message : 'apple verify failed' },
@@ -38,14 +39,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // 2. Build display name: prefer full name from first sign-in, fallback "친구"
+  // Display name: prefer full name from first sign-in, fallback "친구"
   const displayName =
-    [body.fullName?.givenName, body.fullName?.familyName]
+    [parsed.full_name?.given_name, parsed.full_name?.family_name]
       .filter((s): s is string => !!s && s.trim().length > 0)
       .join(' ')
       .trim() || '친구';
 
-  // 3. Upsert user by apple_user_id
+  // Upsert user by apple_user_id
   const existing = await db
     .select()
     .from(users)
@@ -53,8 +54,10 @@ export async function POST(req: Request) {
     .limit(1);
 
   let userId: string;
+  let resolvedDisplayName: string;
   if (existing.length > 0) {
     userId = existing[0].id;
+    resolvedDisplayName = existing[0].displayName;
   } else {
     const inserted = await db
       .insert(users)
@@ -62,18 +65,18 @@ export async function POST(req: Request) {
         appleUserId: identity.appleUserId,
         displayName,
       })
-      .returning({ id: users.id });
+      .returning({ id: users.id, displayName: users.displayName });
     userId = inserted[0].id;
+    resolvedDisplayName = inserted[0].displayName;
   }
 
-  // 4. Sign our app's session JWT
   const jwt = await signSessionToken(userId);
 
   return NextResponse.json({
     jwt,
     user: {
       id: userId,
-      displayName: existing[0]?.displayName ?? displayName,
+      display_name: resolvedDisplayName,
     },
   });
 }

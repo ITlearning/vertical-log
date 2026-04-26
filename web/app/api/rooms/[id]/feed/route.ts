@@ -6,10 +6,9 @@ import { authOr401 } from '@/lib/auth/session';
 const PAGE_SIZE = 50;
 
 /**
- * GET /api/rooms/:id/feed
+ * GET /api/rooms/:id/feed[?before=ISO]
  *
- * Returns clips for a room sorted by captured_at DESC. Caller must be a member.
- * Pagination: pass `?before=<iso-timestamp>` to fetch the next page.
+ * Cursor-paginated clip timeline (member-only). snake_case JSON.
  */
 export async function GET(
   req: Request,
@@ -24,7 +23,6 @@ export async function GET(
   const before = url.searchParams.get('before');
   const beforeDate = before ? new Date(before) : null;
 
-  // Membership check
   const [membership] = await db
     .select({ userId: roomMembers.userId })
     .from(roomMembers)
@@ -42,12 +40,12 @@ export async function GET(
   const result = await db
     .select({
       id: clips.id,
-      roomId: clips.roomId,
-      authorId: clips.authorId,
-      authorDisplayName: users.displayName,
-      blobUrl: clips.blobUrl,
-      durationMs: clips.durationMs,
-      capturedAt: clips.capturedAt,
+      room_id: clips.roomId,
+      author_id: clips.authorId,
+      author_display_name: users.displayName,
+      blob_url: clips.blobUrl,
+      duration_ms: clips.durationMs,
+      captured_at: clips.capturedAt,
     })
     .from(clips)
     .innerJoin(users, eq(users.id, clips.authorId))
@@ -57,6 +55,6 @@ export async function GET(
 
   return NextResponse.json({
     clips: result,
-    nextCursor: result.length === PAGE_SIZE ? result[result.length - 1].capturedAt : null,
+    next_cursor: result.length === PAGE_SIZE ? result[result.length - 1].captured_at : null,
   });
 }
