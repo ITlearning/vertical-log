@@ -7,8 +7,8 @@ export const config: VercelConfig = {
   // Sprint 2: enable cron job for daily compile pipeline (00:00 KST)
   // crons: [{ path: '/api/cron/compile', schedule: '0 15 * * *' }],  // 15:00 UTC = 00:00 KST
   headers: [
+    // API responses must not be cached at any layer.
     routes.cacheControl('/api/(.*)', {
-      public: false,
       noStore: true,
     }),
   ],

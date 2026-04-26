@@ -22,10 +22,14 @@ xcuserdata/
 **/dist/
 **/build/
 *.log
+*.tsbuildinfo
 .npm
 .eslintcache
 .pnp.*
 .yarn/
+
+# Stray root-level package-lock (npm install must run inside web/)
+/package-lock.json
 
 # Vercel
 .vercel
