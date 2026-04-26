@@ -31,9 +31,16 @@ actor APIClient {
         encoder.dateEncodingStrategy = .iso8601
         encoder.keyEncodingStrategy = .convertToSnakeCase
         self.encoder = encoder
+
+        // Hydrate from Keychain on first init. AuthService.restoreSession()
+        // also handles the cold-launch path; this catches background actors
+        // that hit APIClient.shared before AuthService runs.
+        if let stored = Keychain.load(.sessionToken) {
+            self.jwt = stored
+        }
     }
 
-    func setJWT(_ token: String) {
+    func setJWT(_ token: String?) {
         self.jwt = token
     }
 
