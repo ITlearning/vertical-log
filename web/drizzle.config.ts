@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
+
+// vercel env pull writes to .env.local (Next.js convention).
+// Load that first, then fall back to .env if present.
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
 
 export default defineConfig({
   schema: './lib/db/schema.ts',

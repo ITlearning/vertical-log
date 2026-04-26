@@ -1,27 +1,39 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { eq, and, count } from 'drizzle-orm';
 import { db, rooms, roomMembers } from '@/lib/db';
 import { authOr401 } from '@/lib/auth/session';
 import { INVITE_CODE_LENGTH } from '@/lib/db/utils/inviteCode';
 
+const JoinBody = z.object({
+  code: z.string().min(1).max(32),
+});
+
 /**
- * POST /api/rooms/:code/join
+ * POST /api/rooms/join { code: "ABC234" }
  *
- * Idempotent: re-joining an already-member room returns 200 (not 409).
- * Returns 410 if invite code expired (NOT IMPLEMENTED — V1+ feature).
- * Returns 409 if room is at member_cap.
+ * Body-parameter form (originally /:code/join, but Next 16 forbids sibling
+ * dynamic segment names under app/api/rooms/, so the code moved into the body).
+ *
+ * Idempotent: re-joining an already-member room returns 200.
+ * Returns 404 if not found, 409 if room at member_cap.
  */
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ code: string }> }
-) {
+export async function POST(req: Request) {
   const guard = await authOr401(req);
   if (guard instanceof NextResponse) return guard;
   const { userId } = guard;
 
-  const { code: rawCode } = await ctx.params;
-  const code = rawCode.toUpperCase();
+  let body: z.infer<typeof JoinBody>;
+  try {
+    body = JoinBody.parse(await req.json());
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'invalid_request', message: error instanceof Error ? error.message : 'invalid' },
+      { status: 400 }
+    );
+  }
 
+  const code = body.code.toUpperCase();
   if (code.length !== INVITE_CODE_LENGTH) {
     return NextResponse.json(
       { error: 'invalid_code_length', expected: INVITE_CODE_LENGTH },
@@ -29,7 +41,6 @@ export async function POST(
     );
   }
 
-  // Look up room
   const [room] = await db
     .select()
     .from(rooms)
@@ -40,7 +51,6 @@ export async function POST(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  // Already a member? 200 idempotent
   const [existingMembership] = await db
     .select()
     .from(roomMembers)
@@ -63,7 +73,6 @@ export async function POST(
     );
   }
 
-  // Cap check
   const [{ value: currentCount }] = await db
     .select({ value: count() })
     .from(roomMembers)
@@ -76,7 +85,6 @@ export async function POST(
     );
   }
 
-  // Insert membership
   await db.insert(roomMembers).values({
     roomId: room.id,
     userId,
